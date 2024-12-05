@@ -1,0 +1,358 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{index}
+\makeindex
+\usepackage[shortlabels]{enumitem}
+\usepackage{authblk}
+\usepackage{listings}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{hyperref}
+\usepackage{skull}
+\usepackage{graphicx}
+\usepackage{allrunes}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{dcolumn}
+\usepackage{booktabs}
+\usepackage{cancel}
+\usepackage[most]{tcolorbox}
+\usepackage{algpseudocode}
+\usepackage{mathtools}
+\usepackage{subcaption}
+\usepackage[backend=biber,citestyle=alphabetic,bibstyle=authortitle,maxalphanames=6,maxbibnames=7]{biblatex}
+\usepackage{verbatim}
+\addbibresource{sources.bib}
+\renewcommand*{\labelalphaothers}{}
+\usetikzlibrary{automata, positioning, arrows, shapes, calc, trees, fit}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{col}{Corollary}
+\newtheorem{prop}{Proposition}
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}
+\newtheorem{conj}{Conjecture}
+\theoremstyle{remark}
+\newtheorem*{note}{Note}
+\newtheorem{remark}{Remark}
+\newtheorem{case}{Case}
+\newcommand{\romannumeralcaps}[1]{\MakeUppercase{\romannumeral #1}}
+\newcolumntype{M}[1]{D{.}{.}{1.#1}}
+%\renewcommand\qedsymbol{$\skull$}
+%\renewcommand\qedsymbol{$\textarm{q}$}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  frame=single,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
+\tikzset{
+  node distance=2.5cm,
+  every state/.style={semithick,fill=gray!10},
+  double distance=2pt,
+  every edge/.style={draw,->,>=stealth',auto,semithick},
+  initial text=$ $
+}
+\setlength\parindent{0pt}
+
+\begin{document}
+\title{\Large{\textbf{Numerical Semigroups and the Cayley Semigroup Membership Problem}}}
+\author{Jacob Urisman}
+\affil{David A. Mix Barrington, Eric Sommers}
+\date{}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Abstract}
+The Cayley Semigroup Membership problem is a bridge between the world of classical space complexity and semigroup theory. The problem was first found to be NL-complete, after which more specific variants of the problem were gradually determined to be in L using descriptive complexity, circuit complexity, and in this paper, semigroup theory. With help from Dr. Pierre McKenzie, we show that the problem, when restricted to groups, is in L. We investigate the problem for the simplest type of commutative semigroup: monogenic semigroups, and find L equivalence between monogenic semigroups and numerical semigroups. We also connect both variants to the classical algorithmic complexity problem subset sum. From there, we are able to place the problem for monogenic semigroups in L.
+
+\section{Introduction and Basic Definitions}
+The goal of this paper is to find new possible methods of solving the classical complexity theory open problem of L vs NL by drawing connections to abstract algebra, specifically semigroup theory. Our hope is to attract pure mathematicians to the field of complexity theory to see if they can offer new insights to the long standing open problem. Many mathematicians have likely heard of complexity theory as a field of theoretical computer science, but it is important to make a few distinctions about the nature of the problem in this paper. First and foremost, this problem is dealing with space complexity. It is common to hear about complexity theory from the angle of time complexity, as P vs NP is a very famous time complexity problem. L vs NL is a similar problem, but instead of caring about how long a computer would need to run to solve a problem, we care about how much space the computer needs to work out the problem. For the following definitions, we assume the reader is familiar with Turing machines and big-O notation.
+
+\subsection{Space Complexity}
+\begin{defn}
+  Given a Turing machine with an $n$ bit input on a read only input tape, a blank read-write work tape, and a blank write only output tape, we say a problem has an $O(f(n))$ \textit{space complexity} if the Turing machine needs $O(f(n))$ bits of the work tape to solve it.
+\end{defn}
+\begin{remark}
+  For the rest of the paper, the reader may assume that all problems discussed are decision problems, i.e. problems where the answer is ``yes" or ``no".
+\end{remark}
+\begin{defn}
+  A problem is in the complexity class of \textit{deterministic logspace} or L if there exists an algorithm to solve using $O(\log n)$ bits of the work tape.
+\end{defn}
+\begin{defn}
+  A problem is in the complexity class of \textit{nondeterministic logspace} or NL if given an input $x$, there exists an algorithm $A$ (often referred to as a verifier or certifier) and a certificate $c$ (usually a possible solution to the problem on that input), such that $A$ when given $x$ and $c$ checks whether $c$ is a valid solution to the problem in $O(\log n)$ space.
+\end{defn}
+\begin{note}
+  ``Possible solution" in the context of the certificate means the solution that would be output if the problem was not a decision problem.
+\end{note}
+The L vs NL question asks whether the two complexity classes are actually the same. In layman's terms the question is ``is the set of problems that can be solved when using space efficiently and the set of problems that can be verified when using space efficiently the same set?" The answer seems intuitively to be no, but proving that a problem \textit{cannot} be solved using a certain amount of space, i.e. an algorithm solving the problem must use more than a certain amount of space, is very difficult.
+
+\subsection{Reductions}
+The main proof technique when examining the complexity of a problem is to compare it to problem with a known complexity. Say we are examining problem $X$ and we know the complexity of problem $Y$.
+\begin{defn}
+  To show that $X$ is at most as hard as $Y$, we construct a \textit{reduction}, which is a function $f:X\to Y$ such that for every $x\in X$, $f(x)$ has `` yes'' as an answer if and only if $x$ has ``yes'' as an answer.
+\end{defn}
+\begin{note}
+  $f$ must be a deterministic algorithm and cannot be more complex than solving $f(x)$.
+\end{note}
+\begin{remark}
+  The intuition behind reductions is that even if $X$ seems harder than $Y$, one would always just convert $X$ to $Y$ if no easier method is known. This is why we write $X\leq Y$, read as $X$ reduces to $Y$, because $Y$ is as hard or harder than $X$.
+\end{remark}
+\begin{note}
+  To signify the complexity of the reduction, i.e. how long it takes to run $f$, we place a subscript on the $\leq$.
+\end{note}
+
+\subsection{Numerical Semigroups}
+Numerical semigroups have been the subject of recent research by a group of mathematicians at the University of Granada. \cite{garcia2006numerical} They are a fairly simple algebraic object and are easily accessible to any mathematician that has taken a course in abstract algebra. The problem of numerical semigroup membership, which we will define later, is even reminiscent of a standard number theory problem given to students: the Coin Problem (also called the Frobenius Problem and the Postage Stamp Problem). The accessibility of problems regarding numerical semigroups makes them ideal for a wide range of mathematicians to investigate.
+
+\section{Prior Research: BKLM 2001}
+\cite{Barrington2001}
+\subsection{Problem Definition}
+We first begin by investigating the complexity of two group theoretic problems.
+\begin{defn}
+  ~\\
+  \textit{Given}: group $G$ as a multiplication table, and some property. \\
+  \textit{Question}: does $G$ have that property?
+\end{defn}
+\begin{defn}[Cayley Group Membership]
+  ~\\
+  \textit{Given}: group $G$ as a multiplication table, $X\subseteq G$, $t\in G$. \\
+  \textit{Question}: Is $t\in\langle X\rangle$?
+\end{defn}
+CGM for a groupoid was shown to be P-complete \cite{10.1145/800119.803883}. CGM for a semigroup was shown to be NL-complete \cite{Jones1976}. Barrington and McKenzie investigated the problem in 1991 \cite{Barrington1991}.
+
+\subsection{Descriptive Complexity and First-order Definitions}
+It is common in complexity theory to analyze complexity classes given by using first-order logic with a constraint on the length of the quantifier blocks and what kinds of predicates we are allowed. In this setting, the input is a finite structure and the elements of the structure are the domain. For example, the input might be a bit string and the elements are the positions of the string. Regardless of structure, we use predicates to test properties of the structure. For example, given an input representing a graph, we might use the predicate $E(x,y)$ to refer to an edge between nodes $x$ and $y$. The predicate is true if and only if an edge exists. This lens of complexity theory is called descriptive complexity and is outlined well in \cite{Immerman1998-wm}. Descriptive complexity relates neatly to classical complexity classes. For example, first-order logic defines the class $AC^0$, or the class of problems solveable by circuit families of polynomial size with constant depth and unbounded fan-in. In fact, a first-order formula can express a property if and only if it can be tested by a logtime uniform circuit family of polynomial size, unbounded fan-in, and $O(d(n))$ depth where $d(n)$ is the quantifier depth of the formula. For example, $AC^1$ is equivalent to FO$(\log n)$. 
+
+\subsubsection{Defining FOLL}
+The paper introduces a new complexity class FOLL, which stands for FO$(\log\log n)$. In other words, the class of problems solveable by logtime uniform circuit families of polynomial size, unbounded fan-in, and $O(\log\log n)$ depth. It is also important to note that FOLL is closed under FO reductions.
+
+\subsubsection{Where is FOLL on the Inclusion Chain}
+FOLL is only known to include $AC^0$ from the classical circuit complexity classes. $AC^1$ seems to be the smallest classical complexity class not included in FOLL. Furthermore, from the Smolensky circuit lower bound \cite{Smolensky1993OnRB}, we know that any problem in FOLL is not hard for any class containing PARITY.
+
+\subsection{Results}
+\subsubsection{Main Proof Technique}
+A helpful method when working with formulae with iterated quantifiers, is to use a recursive definition of a predicate, and show that it will always terminate after a certain number of steps. For example, $a=b^i$ for $a,b\in G$ can be checked for any $i$ up to $n$. We exploit the inductive nature of the power predicate: $P(a,b,i):=a=b^i$. We have two base cases $P(a,b,0)\iff a=e$, and $P(a,b,1)\iff a=b$. From here, we can write two inductive cases, which are $P(a,b,i)\to\exists j,k,c,d: (i=j+k)\land(c=b^j)\land(d=b^k)\land(a=cd)$, and $P(a,b,i)\to\exists j,k,c:(i=jk)\land(c=b^j)\land(a=c^k)$. \vspace{\baselineskip} 
+
+Now, we shall explain why this definition closes in $O(\log\log n)$ steps so long as $i\leq n$. If $i$ is a power of two, we can write $i=jk$ for a $j$ and $k$ that we choose such that $j$ and $k$ are powers of two and have logs at most half that of $i$. If $i$ is not a power of two, we can write $i=j+k$ for a $j$ and $k$ that we choose such that $j$ and $k$ each have at most half as many ones in their binary expansions as $i$. Since both $\log i$ and the number of ones in the binary expansion of $i$ are bounded by $\log\log n$, we can reach the base cases in at most $2\log\log n$ steps. Furthermore, we can define it using FO. Thus, $\forall a,b\in G,i\leq n: a=b^i\in$ FOLL. It is important to note that this predicate is also in L. We simply compute $b^i$ for all $i\leq n$ and compare each one to $a$.
+
+\subsubsection{Group Properties}
+Here are a few results from the paper regarding testing group properties.
+\begin{theorem}
+  Testing a Cayley Group for cyclicity is in FOLL $\cap$ L.
+\end{theorem}
+\begin{proof}
+  A cyclic group is defined as follows: $\exists g\forall a\exists i:a=g^i$, which is checkable using the power predicate, which is in FOLL $\cap$ L.
+\end{proof}
+\begin{theorem}
+  Testing a Cayley Group for nilpotency is in FOLL $\cap$ L.
+\end{theorem}
+\begin{proof}
+  \begin{lemma}
+    A finite group $G$ is nilpotent if and only if the set of $p$-elements for every prime $p\text{ divides }|G|$ is a group.
+  \end{lemma}
+  \begin{proof}
+    There is a proof of theorem 5.39 in \cite{Rotman1999-zp} and theorem 3 in \cite{Dummit2003-ki} which states that a finite group $G$ is nilpotent if and only if it is the direct product $\Pi$ of Sylow $p$-groups. So, for each prime $p\text{ divides }|G|$, the $p$-elements of $G$ are exactly the elements whose direct product components outside the $p$-groups are trivial. Therefore, the set of $p$-elements is a group, isomorphic to the direct product of the $p$-groups in $\Pi$. \vspace{\baselineskip}
+
+    The converse is slightly simpler. A finite group $G$ with a unique maximal $p$-subgroup for every $p\text{ divides }|G|$, is the direct product of those maximal subgroups. Thus, if it forms a group, it must be the unique maximal $p$-subgroup of $G$. If this is true for all $p\text{ divides }|G|$, then $G$ is nilpotent.
+  \end{proof}
+  For any $p$, we can define a $p$-element in first-order as follows:
+  $$o(a)=m\iff(a^m=e)\land\forall j:0<j<m\to a^j\neq e$$
+  This all relies on the power predicate, and is thus in FOLL $\cap$ L. However, we also need to check that $p$ is a prime smaller than $m$, $m\leq n$, and no prime other than $p\text{ divides } m$. This can all be done in first-order. Thus, our nilpotency test simply follows from the above lemma.
+\end{proof}
+
+\subsubsection{Cayley Group Membership}
+\begin{theorem}
+  CGM(cyclic groups) is in FOLL $\cap$ L.
+\end{theorem}
+\begin{proof}
+  We simply need to check which generator in $\langle X\rangle$ is the greatest common divisor $i$ such that $g^i=h$ for all $h\in X$. Then, for the $j$ such that $g^j=t$, we just need to check that $i\text{ divides } j$.
+\end{proof}
+\begin{theorem}
+  CGM(abelian) is in FOLL.
+\end{theorem}
+\begin{proof}
+  In order to prove this, we will need the following lemma.
+  \begin{lemma}
+    Abelian groups have the $\log n$ power basis property, meaning that for a group $G$, it is abelian if any set of generators $X$ for $G$, any element of $G$ is a product of at most $\log n$ powers of elements of $X$.
+  \end{lemma}
+  \begin{proof}
+    Take an arbitrary set of generators for $G$, called $B=\{b_1,\dots,b_k\}$. Now let $G_i$ be the set of elements generated by $\{b_1,\dots,b_i\}$. Set $X$ to be all $b_i$ such that $G_i$ and $G_{i-1}$ are different. It is fairly straightforward to see that $X$ is the minimal set of generators for $G$. To complete the proof, note that $G_i$ will have at least twice as many elements as $G_{i-1}$, thus $|X|$ is at most $\log n$.
+  \end{proof}
+  Consider the following sets.
+  $$Y_0=\{x^i:x\in X,i\leq n\}$$
+  $$Y_{i+1}=\{yz:y,z\in Y_i\}$$
+  Since $G$ has the $\log n$ power basis property, all we need to do is check that $t\in Y_{\log\log n}$. Finally, since membership in that group is FO definable, this problem is in FOLL.
+\end{proof}
+\begin{note}
+  The above problem was not known to be in L at the time of the paper.
+\end{note}
+\begin{theorem}
+  CGM for solvable groups of solvability class $d(n)$ is in FO($d(n)\log\log n$). Specifically, FOLL if $d(n)=O(1)$.
+\end{theorem}
+\begin{proof}
+  Solvability of a group is defined in terms of a group's derived series, wherein we take successive commutator subgroups and a group is solveable if and only if the series of commutator subgroups eventually terminates in the trivial group. The number of times $d$ we take commutators is the solvability class of $G$. \vspace{\baselineskip}
+
+  The authors extend the method for CGM(abelian) wherein we close the current generating set under powering and then under products, but this time, do it $d$ times. Let us prove this inductively. Our base case is CGM(abelian). Assume that CGM($H$) is FO($(d(n)-1)(\log\log n)$). We shall prove that CGM($G$) is FO($d(n)(\log\log n)$). Let $H$ be the commutator subgroup of $G$. We can generate all elements of $G$ from $H$ as follows. Every element of $G$ is a product of some element of a coset of $G/H$ and an element of $H$. Since the elements $xH$ for every $x\in X$ generates $G/H$. This means we can find an element of every coset of $G/H$ by taking one round of closure under powers and $O(\log n)$ length products (which takes $O(\log\log n)$ time by CGM(abelian)), and we are done.
+\end{proof}
+\begin{theorem}
+  This theorem is due to \cite{therien1980classification}. Any nilpotent group of order $n$ has solvability class $O(\log\log n)$.
+\end{theorem}
+Thus, CGM for nilpotent groups is in FO($(\log\log n)^2$) and thus not hard for any class that contains PARITY.
+
+\subsection{The Division Problem}
+This paper played a seminal role in understanding the complexity of three problems, with one of specific interest. \textit{Iterated multiplication} of $n$ $n$-bit integers, \textit{powering} of an $n$-bit integer by a $\log n$-bit exponent, and most interestingly, \textit{division} of one $n$-bit integer by another.
+In 2000, Chiu, Davida, and Litow \cite{Chiu2001} constructed an L-uniform circuit family which placed these three problems in L. However, analysis of that family equated it to a first order formula with majority quantifiers and only one additional predicate, that being the powering predicate. The results in this paper looked into the complexity of this predicate. This added power from the powering predicate allows for iterated multiplication of numbers getting output into Chinese remainder representation. Thus, the complexity of the three problems is equivalent to converting a number from Chinese remainder form to binary form. This problem was solved only two years later by William Hesse, which culminated in the result that $n$-bit integer division is in fully uniform $TC^0$ \cite{Hesse2002}.
+
+\section{Prior Research: Fleischer 2018}
+\cite{Fleischer2018}
+\subsection{Problem Definition}
+Similar to the Cayley Group Membership problem, the Cayley Semigroup Membership problem is defined as follows.
+\begin{defn}[Cayley Semigroup Membership]
+  ~\\
+  \textit{Given}: semigroup $S$ as a multiplication table, $X\subseteq S$, $t\in S$. \\
+  \textit{Question}: Is $t\in\langle X\rangle$?
+\end{defn}
+The paper analyzed the complexity of this problem for various \textit{varieties} of semigroups. The motivation for this is firstly the direct connection between this problem and regular languages, and secondly the goal of better understanding the connection between algebra and complexity theory. As stated in the previous chapter, previous work of note includes \cite{10.1145/800119.803883},\cite{Jones1976},\cite{Barrington1991},and \cite{Barrington2001}. \vspace{\baselineskip}
+
+Let us define several \textit{varieties} of semigroups that we will be dealing with.
+\begin{defn}
+  \textbf{G}: The class of all finite groups
+\end{defn}
+\begin{defn}
+  \textbf{Ab}: The class of all finite abelian groups
+\end{defn}
+\begin{defn}
+  \textbf{Com}: The class of all commutative semigroups
+\end{defn}
+\begin{defn}
+  \textbf{N}: The class of finite nilpotent semigroups
+\end{defn}
+
+Let us also define the notion of a \textit{join}.
+\begin{defn}
+  The \textit{join} of two varieties \textbf{V} and \textbf{W}, denoted as \textbf{V}$\lor$\textbf{W} is the smallest variety containing both \textbf{V} and \textbf{W}.
+\end{defn}
+
+This paper places various varieties of semigroups into the quasipolynomial size circuit class $qAC^0$. \cite{215383} surveys the complexity of quasipolynomial size circuits, or circuits whose size is $O(2^{\log^cn})$ where $n$ is the size of the input and $c$ is a constant. $qAC^0$ is important because like FOLL, anything in $qAC^0$ cannot be hard for L or any higher class.
+
+\subsection{Main Results}
+\subsubsection{Cayley Circuits}
+\begin{defn}
+  We define \textit{Cayley circuits} as non-classical circuits where each vertex has in-degree 0 or 2. In-degree 0 vertices are input gates, and in-degree 2 vertices are product gates. Let there be a topologically maximal product gate called the output gate. The size of a circuit $\mathcal{C}$ is denoted by $|\mathcal{C}|$. An input to such a circuit is a list of $k$ elements $x_1\dots x_k$. Parenthesization does not matter as semigroups are associative.
+\end{defn}
+\begin{theorem}
+  Let $\mathcal{C}$ be a Cayley circuit of size $m$. $\mathcal{C}$ can be simulated by an $AC^0$ circuit of size $n^m$.
+\end{theorem}
+\begin{proof}
+  The input is $O((|S|^2+k)\log n)$ bits. For each gate $i\in\{1,\dots,m\}$ of $\mathcal{C}$, we add $\lceil\log|S|\rceil$ incoming wires to an AND gate (which checks if a fixed vector $(y_1,\dots,y_m)$ is a valid sequence in $\mathcal{C}$ under the given inputs): if the $i$-th gate of $\mathcal{C}$ is an input gate, we feed the bits of the corresponding input value into the AND gate, complementing the $j$-th bit if the $j$-th bit of $y_i$ is 0. If the $i$-th gate is a product gate and has incoming wires from gates $l$ and $r$, we connect the entry $(y_l,y_r)$ of the multiplication table to the AND gate, again complementing bits corresponding to 0-bits of $y_i$.
+  To obtain a Boolean circuit simulating $\mathcal{C}$, we put such AND gates for all vectors in parallel. In a second layer, we create $\lceil\log|S|\rceil$ OR gates and connect the AND gate for a vector to the $j$-th OR gate if and only if the $j$-th bit of $y_m$ is one. The idea is that exactly one of the AND gates (the gate corresponding to the vector of correct guesses of the gate values of $\mathcal{C}$) evaluates to 1 and the corresponding output value ym then occurs as output value of the OR gates.
+  This circuit has depth 2 and size $|S|^m+\lceil\log|S|\rceil$.
+\end{proof}
+
+\subsubsection{Poly-Logarithmic Circuits}
+As seen in the previous chapter, \cite{Barrington2001} introduced the logarithmic power basis property. Fleischer builds on this and introduce a new property called the poly-logarithmic circuits property. He then proves that both \textbf{Com} and \textbf{G} have this property.
+\begin{lemma}
+  The \textit{variety} \textbf{Com} has the logarithmic power basis property.
+\end{lemma}
+\begin{proof}
+  Let $t=x_1^{i_1},\dots,x_k^{i_k}$ for $i_n\in\mathbb{N}$. Assume for the sake of contradiction that $k>\log|S|$. The power set $\mathcal{P}(\{1,\dots,k\})$ forms a semigroup under the set union operation. Consider the morphism $h:\mathcal{P}(\{1,\dots,k\})\to S$ defined by $h(\{j\})=x_j^{i_j}$ for all $j\in\{1,\dots,k\}$.
+  This morphism is well-defined since $S$ is commutative. This means that $|\mathcal{P}(\{1,\dots,k\})|=2^k>2^{\log|S|}=|S|$. However, by the pigeonhole principle, there exists some element which is not needed in the product $x_1^{i_1},\dots,x_k^{i_k}$ to produce $t$, which is a contradiction.
+\end{proof}
+\begin{prop}
+  Let \textbf{V} be a class of semigroups which is closed under subsemigroups and has the logarithmic power basis property. Then \textbf{V} has the poly-logarithmic circuits property.
+\end{prop}
+\begin{proof}
+  We can construct Cayley circuits $\mathcal{C}_1,\dots,\mathcal{C}_k$ of size at most $2\lceil\log|S|\rceil$. We can then use an additional $k-1$ product gates to combine each circuit into a single circuit with $k\cdot2\lceil\log|S|\rceil+k-1<5\log^2|S|$ gates since $k\leq\log|S|$.
+\end{proof}
+\begin{defn}
+  A \textit{straight line program} over a finite group $G$ and a subset $X$ is a sequence of elements $(g_1,\dots,g_l)$ where each $g_i\in X$ or $g_i=g_p^{-1}$ or $g_i=g_pg_q$ for some $p,q<i$. $l$ is called the length.
+\end{defn}
+\begin{lemma}{Reachability Lemma}
+  Let $G$ be a finite group and let $X$ be a set of generators for $G$. Then, for each element $t\in G$, there exists a straight-line program over $X$ generating $t$ of length at most $(\log|G|+1)^2$. Proof due to \cite{Babai1991}.
+\end{lemma}
+\begin{proof}
+  We create sets of increasing size $C_i=\{h_1^{e_1}h_2^{e^2}\cdots h_i^{e_i}\mid e_j\in\{0,1\}\}$. Let $C_0=\{1\}$. We then find an $h_{i+1}\in C_i^{-1}C_iX$ such that $C_i\cap C_ih_{i+1}=\emptyset$. If no such $h_{i+1}$ is found, our $C_i$ is our straight line program. Let $i=t$ at termination. $C_{i+1}=C_i\cup C_ih_i$ by definition, so $t\leq\log|G|$. Furthermore, if there is no such $h_{i+1}$, then $C_i\cap C_ih_{i+1}\neq\emptyset$, meaning every element was in $C_i$, making $C_i^{-1}C_iX\subseteq C_i^{-1}C_i$, and therefore $G=C_i^{-1}C_iX^N\subseteq C_i^{-1}C_i$ making $C_i^{-1}C_i=G$. Thus, every element of $G$ can be written as $x^{-1}y$ for $x,y\in C_t$. Finally, the cost of adding $h_{i+1}$ to $X\cup{h_1,\dots, h_i}$ is $\leq(2i-1)$ making the total cost of the straight line program $\leq\sum_{i=1}^t(2i-1)=t^2\leq(\log|G|)^2$
+\end{proof}
+\begin{lemma}
+  The \textit{variety} \textbf{G} has the poly-logarithmic circuits property.
+\end{lemma}
+\begin{proof}
+  By the Reachability Lemma, there exists a straight line program for any finite group with $l\leq(\log|G|+1)^2$. We construct a Cayley circuit $\mathcal{C}$ by adding one of three types of gates for each element in the straight line program. If $g_i\in X$, we add a new input gate and let the next element in the sequence $x_k=g_i$. If $g_i=g_pg_q$, then we add a new product gate. If $g_i=g_p^{-1}$, we can add a Cayley circuit $\mathcal{C}'$ with maximum $2\lceil\log|G|\rceil$ gates. The resulting circuit will have a maximum of $(\log|G|+1)^2\cdot2\lceil\log|G|\rceil\leq2(\log|G|+1)^3$ gates.
+\end{proof}
+\begin{theorem}
+  Let \textbf{V} be a class of semigroups with the poly-logarithmic circuits property. Then CSM(\textbf{V}) is in $qAC^0$.
+\end{theorem}
+\begin{proof}
+  Since \textbf{V} has the poly-logarithmic circuits property, we know that, for some constant $c$, the element $t$ is in the subsemigroup generated by $X$ if and only if there exist a Cayley circuit $\mathcal{C}$ of size $\log^cn$ and inputs $x_1,\dots,x_k\in X$ such that $\mathcal{C}(S,x_1,\dots,x_k)=t$. There are at most $(\log^cn\cdot\log^cn)^{\log^cn}=2^{\log^cn\log(2c\log n)}$ different Cayley circuits of this size.
+  For any of these Cayley circuits, by Proposition 3, there exists an $AC^0$ circuit of size $n^{\log^cn} = 2^{\log^{c+1}n}$ which simulates it. There are at most $n^k\leq n^{\log^cn}=2^{\log^{c+1}n}$ possibilities of connecting (not necessarily all) input gates corresponding to the elements of $X$ to this simulation circuit. Thus, we can check for all Cayley circuits of the given size and all possible input assignments in parallel, whether the value of the corresponding circuit is $t$, and feed the results of all these checks into a single OR gate to obtain a quasi-polynomial-size Boolean circuit.
+\end{proof}
+
+\subsubsection{Looking at the Complexity of Some Varieties}
+Fascinatingly, while CSM(\textbf{G}) and CSM(\textbf{Com}) are both in $qAC^0$, CSM(\textbf{N})$\subseteq$CSM(\textbf{G}$\lor$\textbf{Com}) is NL-complete \cite{Jones1976}. Fleischer refers to this as ``strange complexity''. What this means is that for any well defined variety of semigroup that is not NL-complete, it will likely not be complete for any class that contains parity. Furthermore, since we now know that CSM(\textbf{G}) is in L, there is likely no variety that we can find that is L-complete. 
+
+\section{New Research}
+\subsection{An Observation}
+As Dr. Pierre McKenzie recently pointed out to us, undirected graph reachability is reducible to the Cayley Group Membership problem for an arbitrary finite group, putting the entirety of CGM in L.
+\begin{remark}
+    CSM(\textbf{G}) $\leq_L$ UReach 
+\end{remark}
+\begin{proof}
+  Let $G,X,t$ be an arbitrary input to CGM as defined above. We construct an undirected graph with nodes for each element $a\in G$. Then, $\forall y\in G,x\in X$ we add the undirected edge $(y,z)$ where $z=yx$. Let $s$ be the node constructed from the identity element and let $t$ be the node constructed from the target element. \vspace{\baselineskip}
+    
+  Now all that's left to check is that if an edge is able to be taken, we must be able to take it back, which corresponds to inverses of every $x\in X$ being able to be generated by $X$. We exploit the property of groups that $x^{-1}=x^{n-1}$ where $n=|G|$ to see that the inverse of every $x\in X$ is able to be generated by using only $x$. \vspace{\baselineskip}
+
+  Thus, if there is a path from $s$ to $t$, then we can write $t$ as a product of each edge taken to reach it, making it able to be generated by $X$. Conversely, if $t$ can be written as a product of elements of $X$, we simply follow edges associated with each element of the product to reach $t$ from $s$. 
+\end{proof}
+
+This observation, coupled with the 2004 result that undirected graph reachability is in L \cite{10.1145/1391289.1391291} shows that CSM(\textbf{G}) is in L.
+
+\subsection{Results}
+\subsubsection{Numerical Semigroups Again}
+The following algebraic object will be our central focus for the rest of this paper, as it is simple to work with and there is a substantial amount of prior research on it.
+\begin{defn}
+  A set $S\subset\mathbb{N}$ is a \textit{numerical semigroup} if 
+  \begin{enumerate}
+      \item $0\in S$
+      \item $S$ is cofinite
+      \item $x,y\in S\to x+y\in S$
+  \end{enumerate}
+\end{defn}
+\begin{remark}
+  Note that it is simple to construct a numerical semigroup by starting with a set of naturals and adding every linear combination of elements in that set. More formally, for a set $\{n_1,\dots,n_k\}$, if a natural can be represented as $x_1n_1+\cdots+x_kn_k$, then it is in $S$.
+\end{remark}
+\begin{theorem}
+  CSM(Monogenic) is L-equivalent to CSM(Numerical)
+\end{theorem}
+\begin{proof}
+  For the first direction, i.e. CSM(Monogenic) $\leq_\text{L}$ CSM (Numerical), let $M$ be an arbitrary monogenic semigroup generated by $g$. Let $m$ be the index of the monogenic semigroup and let $r$ be the period, i.e. the smallest positive integers such that $g^m=g^{m+r}$. Finally, let $j$ be the discrete log of the target element $t$, i.e. $g^j=t$. If $j\geq m$, then we will show that we can check in logspace whether $\langle X\rangle=t$. This case is equivalent to the cyclic group case, so we simply need to take the gcd of the discrete logs of all the elements of $\langle X\rangle$ and $r$ and see if that number divides $j$. To verify that this works, we note that if the target element is in the loop, our generators will generate everything in the loop that is a multiple of the gcd of the discrete logs. However, if the loop is coprime to the gcd of the generators, then everything in the loop will necessarily be generated. The only thing left to worry about is whether we need to adjust the generators that might be in the loop by $m$, but we need not worry, since addition of two elements still works the same as in the cyclic group case, i.e. $g^x+g^y=g^{x+y}$ up to equivalence in the loop. \vspace{\baselineskip}
+    
+  Otherwise, we have the case where the target lies in the stem of the semigroup. In this case, it is not immediately obvious how to solve this in logspace. However, it is equivalent to the case where we ignore the cycle of the semigroup, leaving elements 1 to $m-1$. We can rephrase this problem as the case where $M$ now becomes the numerical semigroup $\langle X\rangle$, i.e. the numerical semigroup generated by our set of elements $X$. If there is a way to solve this problem for a monogenic semigroup in L, then we can use the method for solving the case where the target lies in the stem of the semigroup on a numerical semigroup. Conversely, if there is a way to solve this problem for a numerical semigroup in L, then we can use that method as the way to solve the case where the target lies in the stem of a monogenic semigroup. \vspace{\baselineskip}
+
+  Conversely, it is trivially true that CSM(Numerical) $\leq_\text{L}$ CSM(Monogenic), as an input to CSM(Numerical) is just the generators of the monogenic semigroup of order $t$ with period 0. \vspace{\baselineskip}
+    
+  It is important to note with this proof that all of these reductions are Turing reductions. Each of these reductions can be computed on a logspace transducer rather easily.
+\end{proof}
+
+\subsubsection{Subset Sum}
+Another method of attack for this problem could be one inspired by the subset sum problem. Finding a combination of elements to try to reach a target is simply subset sum with the ability to reuse elements multiple times. Unary subset sum has been proven to be in L \cite{kane2017unary}. However, the algorithm for solving unary subset sum in L allows our set of elements to be a multiset. This puts CSM(Numerical) in L and by extension CSM(Monogenic). \vspace{\baselineskip}
+
+The algorithm takes advantage of an interesting number theoretic property. If we start with the generating function sum values of subsets: $sum_{S\subseteq[n]}x^{\sum_{i\in S}X_i}$ where $X_i$ is an element of $X$ and $x$ is the standard polynomial variable. With some basic combinatorics, we can turn this sum notation into product notation: $\prod_{i=1}^{|X|}(1+x^{X_i})$. The important thing is that this product is easy to compute in L. From there, taking the sum of these products multiplied by $x^{-t}$ over some prime has an interesting property. If $\sum_{x=1}^{p-1}x^{-t}\prod_{i=1}^{|X|}(1+x^{X_i})\not\equiv0\pmod{p}$ for some prime $p$, then there exists a solution to subset sum. Note that this formula does not tell us anything about what the subset is, only that it exists. Checking this formula over every prime between the length $C$ of the input and $2^C$ ensures that the algorithm outputs the correct answer. The fact that our input is in unary allows this to be in L.
+
+\subsubsection{Preprocessing and Possible Directions of Future Research}
+
+CSM for the simplest case of commutative semigroups, monogenic semigroups, is in L by the two previous theorems. We can extend these results to CSM for semigroups generated by a constant number of elements. \vspace{\baselineskip} 
+  
+There is no overarching theorem for finitely generated commutative semigroups as there are with groups. Can we extend these results to all commutative semigroups being in L?
+
+\section{Conclusion}
+
+As stated previously, CSM(\textbf{G}) is now known to be in L. Monogenic semigroups are the simplest finite commutative semigroups, being cyclic groups without necessitating the identity element or inverses. Furthermore, now that we have drawn this connection between CSM(Monogenic), CSM(Numerical), and subset sum, this now seems like a problem that can be attacked both from an algorithmic perspective, and a semigroup theoretical perspective.
+
+\section{Acknowledgements}
+Thank you to my incredible parents Dr. Anatoly Urisman and Tatiana Urisman, my lovely sibling Hannah Urisman, my amazing grandparents, uncle, aunt, and cousins, and my wonderful girlfriend Ashley Sage Ginzburg for their unconditional love and support. Thank you to Dr. David Mix Barrington for his extraordinary mentorship and advice. Thank you to Dr. Eric Sommers for his help and perspective on this project. Thank you to Dr. Pierre McKenzie for his astute and eye-opening observation. Thank you to Dr. William Hoza for pointing us in the direction of numerical semigroups. 
+
+\printbibliography
+
+\end{document}
